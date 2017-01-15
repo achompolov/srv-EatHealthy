@@ -11,11 +11,23 @@ for (var k in interfaces) {
     }
 }
 
-const http = require('http');
+/* Start the server on the IPv4 and on random port*/
+const app = require('express')();
+const http = require('http').Server(app);
 const ip = addresses;
-const port = 5001;
-const server = http.createServer();
+const port = 5000 //Math.floor(1000 + Math.random() * 9000);
+const socketIO = require('socket.io')(http);
 
-server.listen(port, ip, () => {
+http.listen(port, ip, function() {
   console.log(`Server running at http://${ip}:${port}`);
+});
+
+socketIO.on('connection', function(socket){
+  var clientIp = socket.request.connection.remoteAddress;
+
+  console.log(`Client with IP:${clientIp} has Connected.`);
+
+  socket.on('disconnect', function() {
+    console.log(`Client with IP:${clientIp} Disconnected`);
+  });
 });
