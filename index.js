@@ -15,7 +15,7 @@ for (var k in interfaces) {
 const app = require('express')();
 const http = require('http').Server(app);
 const ip = addresses;
-const port = 5000 //Math.floor(1000 + Math.random() * 9000);
+const port = Math.floor(1000 + Math.random() * 9000);
 const socketIO = require('socket.io')(http);
 
 http.listen(port, ip, function() {
