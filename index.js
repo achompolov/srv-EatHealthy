@@ -28,6 +28,6 @@ socketIO.on('connection', function(socket){
   console.log(`Client with IP:${clientIp} has Connected.`);
 
   socket.on('disconnect', function() {
-    console.log(`Client with IP:${clientIp} Disconnected`);
+    console.log(`Client with IP:${clientIp} has Disconnected`);
   });
 });
