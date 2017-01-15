@@ -2,12 +2,10 @@
   "name": "EatHealthy",
   "version": "0.0.1",
   "description": "EatHealthy is iOS application. ELSYS Project",
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "express": "^4.14.0",
+    "mysql": "^2.12.0",
     "socket.io": "^1.7.2"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/achompolov/srv-EatHealthy"
   }
 }
