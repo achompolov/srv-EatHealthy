@@ -50,6 +50,7 @@ socketIO.on('connection', function(socket){
     console.log(`Client with IP:${clientIp} has Disconnected`);
   });
 
+  /* client clicked signUpButton */
   socket.on('signUpClicked', function(signUpData) {
     var signUpDataArray = signUpData.split(' | ');
 
@@ -68,6 +69,7 @@ socketIO.on('connection', function(socket){
     console.log(`firstName: ${firstName}\nlastName: ${lastName}\nemail: ${email}\nusername${username}\npassword: ${password}\nbirthDate: ${birthDate}\ngender: ${gender}\n`);
   });
 
+  /* client clicked logInButton */
   socket.on('logInClicked', function(logInData) {
     var logInDataArray = logInData.split(' | ');
     var username = logInDataArray[0];
