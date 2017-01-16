@@ -31,7 +31,11 @@ socketIO.on('connection', function(socket){
     console.log(`Client with IP:${clientIp} has Disconnected`);
   });
 
-  socket.on('signUpClicked', function(fullName) {
-    console.log(fullName);
+  socket.on('signUpClicked', function(signUpData) {
+    console.log(signUpData);
+  });
+
+  socket.on('logInClicked', function(logInData) {
+    console.log(logInData);
   });
 });
