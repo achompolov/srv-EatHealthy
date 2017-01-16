@@ -22,20 +22,20 @@ http.listen(port, ip, function() {
   console.log(`Server running at http://${ip}:${port}`);
 });
 
-socketIO.on('connection', function(socket){
+socketIO.on('connection', function(clientSocket){
   var clientIp = socket.request.connection.remoteAddress;
 
   console.log(`Client with IP:${clientIp} has Connected.`);
 
-  socket.on('disconnect', function() {
+  clientSocket.on('disconnect', function() {
     console.log(`Client with IP:${clientIp} has Disconnected`);
   });
 
-  socket.on('signUpClicked', function(signUpData) {
+  clientSocket.on('signUpClicked', function(signUpData) {
     console.log(signUpData);
   });
 
-  socket.on('logInClicked', function(logInData) {
+  clientSocket.on('logInClicked', function(logInData) {
     console.log(logInData);
   });
 });
