@@ -45,13 +45,16 @@ router.route('/users')
   .post(function(req, res) {
     var user = new User();
     user.name = req.body.name;
+    user.email = req.body.email;
+    user.username = req.body.username;
+    user.password = req.body.password;
+    user.birthDate = req.body.birthDate;
+    user.gender = req.body.gender;
 
     // save the user and check for errors
     user.save(function(err) {
       if (err)
         res.send(err);
-
-      res.json({ message: 'User created!' });
     });
   })
 
@@ -126,21 +129,19 @@ socketio.on('connect', function(socket){
   });
 
   socket.on('signUpClicked', function(signUpData) {
-    var fullName = signUpData[0]
+    var name = signUpData[0]
     var email = signUpData[1];
     var username = signUpData[2];
     var password = signUpData[3];
     var birthDate = signUpData[4];
     var gender = signUpData[5];
 
-    console.log(`firstName: ${firstName}\nlastName: ${lastName}\nemail: ${email}\nusername${username}\npassword: ${password}\nbirthDate: ${birthDate}\ngender: ${gender}\n`);
   });
 
   socket.on('logInClicked', function(logInData) {
     var username = logInData[0];
     var password = logInData[1];
 
-    console.log(`username: ${username}\npassword: ${password}\n`);
   });
 
 });
