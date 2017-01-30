@@ -5,6 +5,7 @@
 // ==================================================================================
 const express = require('express');
 const app = express();
+const morgan = require('morgan');
 const http = require('http').Server(app);
 const socketio = require('socket.io')(http);
 const bodyParser = require('body-parser');
@@ -12,19 +13,26 @@ const os = require('os');
 const interfaces = os.networkInterfaces();
 const shortid = require('shortid');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 
 
 // BASE SETUP
 // ==================================================================================
 // configure app to use bodyParser()
 // this will let us get the data from a POST
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+var User = require('./app/models/user');
 
-mongoose.Promise = global.Promise;
 mongoose.connect('mongodb://localhost:27017'); // connect to our database
 
-var User = require('./app/models/user');
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(morgan("dev"));
+app.use(function(req, res, next) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type, Authorization');
+    next();
+});
 
 // ROUTES FOR OUR API
 // =============================================================================
@@ -39,78 +47,104 @@ router.use(function(req, res, next) {
 // more routes for our API will happen here
 // on routes that end in /users
 // ----------------------------------------------------
-router.route('/users')
 
-  // create a user on POST (accessed at POST)
+// LogIN Route
+router.route('/users/login')
+
+  //  POST (accessed at POST)
   .post(function(req, res) {
-    var user = new User();
-    user.name = req.body.name;
-    user.email = req.body.email;
-    user.username = req.body.username;
-    user.password = req.body.password;
-    user.birthDate = req.body.birthDate;
-    user.gender = req.body.gender;
-
-    // save the user and check for errors
-    user.save(function(err) {
-      if (err)
-        res.send(err);
+  User.findOne({username: req.body.username, password: req.body.password}, function(err, user) {
+      if (err) {
+          res.json({
+              type: false,
+              data: "Error occured: " + err
+          });
+      } else {
+          if (user) {
+             res.json({
+                  type: true,
+                  data: user,
+                  token: user.token
+              });
+          } else {
+              res.json({
+                  type: false,
+                  data: "Incorrect username/password"
+              });
+          }
+      }
     });
   })
 
-  // get all the users (accessed at GET)
-  .get(function(req, res) {
-    User.find(function(err, users) {
-      if (err)
-        res.send(err);
+// SignUP Route
+router.route('/users/signup')
 
-      res.json(users);
+  .post(function(req, res) {
+    User.findOne({username: req.body.username, password: req.body.password}, function(err, user) {
+        if (err) {
+            res.json({
+                type: false,
+                data: "Error occured: " + err
+            });
+        } else {
+            if (user) {
+                res.json({
+                    type: false,
+                    data: "User already exists!"
+                });
+            } else {
+                var userModel = new User();
+                userModel.email = req.body.email;
+                userModel.name = req.body.name;
+                userModel.username = req.body.username;
+                userModel.password = req.body.password;
+                userModel.date = req.body.date;
+                userModel.gender = req.body.gender;
+                userModel.save(function(err, user) {
+                    user.token = jwt.sign(user, process.env.JWT_SECRET);
+                    user.save(function(err, user1) {
+                        res.json({
+                            type: true,
+                            data: user1,
+                            token: user1.token
+                        });
+                    });
+                })
+            }
+        }
     });
   })
 
-// on routes that end in /users/:user_id
-// ----------------------------------------------------
-router.route('/users/:user_id')
+router.route('/users/me')
 
-  // get the bear with that id (accessed at GET)
-  .get(function(req, res) {
-      User.findById(req.params.user_id, function(err, user) {
-        if (err)
-          res.send(err);
-        res.json(user);
-      });
-  })
-
-  // update the user with this id (accessed at PUT)
-  .put(function(req, res) {
-    // use user model to find the user we want
-    User.findById(req.params.user_id, function(err, user) {
-      if (err)
-        res.send(err);
-
-      user.name = req.body.name; // update the user name
-
-      // save the user
-      user.save(function(err) {
-        if (err)
-          res.send(err);
-
-        res.json({ message: 'User updated!' });
-      });
+  .get( ensureAuthorized, function(req, res) {
+    User.findOne({token: req.token}, function(err, user) {
+        if (err) {
+            res.json({
+                type: false,
+                data: "Error occured: " + err
+            });
+        } else {
+            res.json({
+                type: true,
+                data: user
+            });
+        }
     });
   })
 
-  // delete the user with this id (accessed at DELETE)
-  .delete(function(req, res) {
-    User.remove({
-      _id: req.params.user_id
-    }, function(err, user) {
-      if (err)
-        res.send(err);
-
-      res.json({ message: 'User deleted!'});
-    });
-  })
+  function ensureAuthorized(req, res, next) {
+    var bearerToken;
+    var bearerHeader = req.headers["authorization"];
+    if (typeof bearerHeader !== 'undefined') {
+        var bearer = bearerHeader.split(" ");
+        bearerToken = bearer[1];
+        req.token = bearerToken;
+        next();
+    } else {
+        res.send(403);
+    }
+  };
 
 // REGISTER OUR ROUTES -------------------------------
 // all of our routes will be prefixed with /api
@@ -143,13 +177,16 @@ socketio.on('connect', function(socket){
     var password = logInData[1];
 
   });
-
 });
 
 
 // START THE SERVER ON THE IPv4
 // ==================================================================================
-const port = 8080
+process.on('uncaughtException', function(err) {
+    console.log(err);
+});
+
+const port = 8080;
 http.listen(port);
 
 console.log(`Magic happens on port ${port}`);
